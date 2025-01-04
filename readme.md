@@ -1,22 +1,23 @@
-# Simple Demo of Spring Boot with Axon Framework (CQRS & Event Sourcing)
+# Démonstration de Spring Boot avec Axon Framework : Implémentation de CQRS et Event Sourcing
 
-This repository shows a **minimal** example of how to implement [CQRS](https://martinfowler.com/bliki/CQRS.html) and **Event Sourcing** in a Spring Boot application using the [Axon Framework](https://axoniq.io/).
-
----
-
-## What are CQRS and Event Sourcing?
-
-> [!NOTE]  
-> **CQRS (Command Query Responsibility Segregation)**: A pattern that separates the write side (commands/updates) from the read side (queries) of an application. By doing so, the **Command** side can focus on changing state, while the **Query** side can focus on reading state.
-
-> [!NOTE]
-> **Event Sourcing**: Instead of storing the “current” state of an entity directly, we store a sequence of **events** that happened to it. The current state is then derived from replaying or projecting these events. This makes the system auditable and allows easy state replay/recovery.
+Ce projet propose un exemple simple pour appliquer les concepts de CQRS et Event Sourcing dans une application Spring Boot, en utilisant le framework Axon.
 
 ---
 
-## Dependencies
+## Les concepts de CQRS et Event Sourcing
 
-Add Axon and remove the Axon Server Connector (if you don’t plan on using Axon Server):
+**CQRS (Command Query Responsibility Segregation)**: Une approche qui sépare la gestion des commandes (écriture) des requêtes (lecture). Cela permet d’optimiser chaque côté indépendamment :
+
+- **Écriture** : Concentre les opérations modifiant l'état.
+- **Lecture** : Se focalise sur l’accès et la présentation des données.
+
+**Event Sourcing**: Au lieu de sauvegarder directement l’état final d’une entité, on conserve une séquence d’événements décrivant son évolution. L’état actuel est reconstitué en rejouant ces événements, ce qui offre des avantages comme l’auditabilité et la récupération des états passés.
+
+---
+
+## Configuration des dépendances
+
+1. Ajout du framework Axon : Excluez le connecteur Axon Server si vous n'utilisez pas Axon Server.
 
 ```xml
 <dependency>
@@ -32,7 +33,7 @@ Add Axon and remove the Axon Server Connector (if you don’t plan on using Axon
 </dependency>
 ```
 
-For easy API testing (via Swagger/OpenAPI UI), add:
+2. Ajouter Swagger pour tester facilement les API :
 
 ```xml
 <dependency>
@@ -44,37 +45,42 @@ For easy API testing (via Swagger/OpenAPI UI), add:
 
 ---
 
-## How It Works
+## Structure et fonctionnement
 
-### Common API
-This module contains shared classes:
-- **Commands** (e.g. `CreateAccountCommand`, `CreditAccountCommand`)
-- **Events** (e.g. `AccountCreatedEvent`, `AccountCreditedEvent`)
-- **DTOs** used by both command and query sides
+### API Commune
+Elle regroupe les éléments partagés entre les modules :
+- **Commandes** .
+- **Événements** .
+- **DTOs** utilisés par les côtés commande et requête.
+ 
+### Gestion des Commandes (Écriture)
+- **Logique métier dans les Agrégats**: Where your domain logic lives.
+  - Définis avec l’annotation  `@Aggregate`
+  - **Command Handlers** : Gestion des commandes.
+  - **Event Sourcing Handlers** : Mise à jour de l'état interne en appliquant les événements.
 
-### Command Side (Write)
-- **Aggregate**: Where your domain logic lives.
-  - Annotated with `@Aggregate`
-  - Contains **Command Handlers** to execute commands
-  - Contains **Event Sourcing Handlers** to update internal state when events are applied
-
-- **Controller** (example snippet):
+- **Exemple de contrôleur pour la création d’un compte**:
+  
   ```java
-  @PostMapping("/create")
-  public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
-      return commandGateway.send(new CreateAccountCommand(
-              UUID.randomUUID().toString(),
-              request.getIniatialBalance(),
-              request.getCurrency()
-      ));
-  }
-  ```
-  - Uses `CommandGateway` to send commands to the Aggregate.
-  - Optionally, you can retrieve an `EventStore` if you want to inspect stored events.
+ @PostMapping("/create")
+public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
+    return commandGateway.send(new CreateAccountCommand(
+            UUID.randomUUID().toString(),
+            request.getIniatialBalance(),
+            request.getCurrency()
+    ));
+}
+```
 
-### Query Side (Read)
-- **Query Handlers**: Reaction to events to build/read the “query model.”
-- **Entities**: JPA/Hibernate entities to store read-side data (e.g. `Account`, `Operation`).
+  - Les commandes sont envoyées via le **CommandGateway** .
+  - Optionnellement, on peut accéder à l’`EventStore` pour examiner les événements stockés.
+
+### Gestion des Requêtes (Lecture) :
+
+Les requêtes permettent de construire un modèle optimisé pour la lecture :
+
+Les gestionnaires réagissent aux événements pour maintenir les données de lecture
+Les entités sont stockées avec JPA/Hibernate (ex. : Account, Operation)
 - **Controller** (example snippet):
   ```java
   @GetMapping("/account/{accountId}")
@@ -83,49 +89,140 @@ This module contains shared classes:
           new FindAccountQuery(accountId),
           ResponseTypes.instanceOf(AccountLookupResponseDTO.class)
       );
-  }
-  ```
-  - Uses `QueryGateway` to fetch data from the read model.
+  }```
+
+Les commandes sont envoyées via CommandGateway. Optionnellement, utilisez l'EventStore pour examiner les événements stockés.
 
 ---
 
-## Running & Testing
+##   
+Voici un fichier README.md prêt à l'emploi pour votre projet :
 
-1. **Build and run**: `mvn spring-boot:run` (or run from your IDE).
-2. Open the **Swagger UI** (by default at `http://localhost:8083/swagger-ui.html`) to see and test the endpoints.
-3. **Create an account** by sending a `POST` to `/commands/accounts/create` with a JSON body like:
+markdown
+Copier le code
+# Spring Boot avec Axon Framework : CQRS & Event Sourcing
+
+Ce projet propose une implémentation simple des concepts **CQRS** et **Event Sourcing** dans une application Spring Boot en utilisant le framework Axon.
+
+---
+
+## Introduction aux concepts
+
+### CQRS (Command Query Responsibility Segregation)
+Une approche qui sépare la gestion des commandes (écriture) des requêtes (lecture), permettant d’optimiser chaque côté indépendamment :
+- **Écriture** : Concentre les opérations modifiant l'état.
+- **Lecture** : Se focalise sur l’accès et la présentation des données.
+
+### Event Sourcing
+Plutôt que de sauvegarder directement l’état final d’une entité, on conserve une séquence d’événements décrivant son évolution. L’état actuel est reconstitué en rejouant ces événements, ce qui offre des avantages comme :
+- Auditabilité
+- Reconstitution des états passés
+
+---
+
+## Configuration des dépendances
+
+1. **Ajouter Axon Framework**  
+   Excluez le connecteur Axon Server si vous ne l'utilisez pas :
+```xml
+<dependency>
+       <groupId>org.axonframework</groupId>
+       <artifactId>axon-spring-boot-starter</artifactId>
+       <version>4.10.3</version>
+       <exclusions>
+           <exclusion>
+               <groupId>org.axonframework</groupId>
+               <artifactId>axon-server-connector</artifactId>
+           </exclusion>
+       </exclusions>
+   </dependency>
+```
+   
+2. **Ajouter Swagger pour tester facilement les API** :
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.7.0</version>
+</dependency>
+```
+
+3. **Structure et fonctionnement** :
+
+API Commune
+Module regroupant les éléments partagés entre les modules :
+
+Commandes (ex. : CreateAccountCommand, CreditAccountCommand)
+Événements (ex. : AccountCreatedEvent, AccountCreditedEvent)
+DTOs utilisés par les côtés commande et requête
+Gestion des Commandes (Écriture)
+La logique métier est implémentée dans les agrégats :
+
+Annotés avec @Aggregate
+Contiennent :
+Command Handlers : Gestion des commandes
+Event Sourcing Handlers : Mise à jour de l'état interne lors de l’application des événements
+Exemple de contrôleur :
+
+```java
+@PostMapping("/create")
+public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
+    return commandGateway.send(new CreateAccountCommand(
+        UUID.randomUUID().toString(),
+        request.getIniatialBalance(),
+        request.getCurrency()
+    ));
+}
+```
+
+## Les commandes sont envoyées via CommandGateway. Optionnellement, utilisez l'EventStore pour examiner les événements stockés.
+
+Gestion des Requêtes (Lecture)
+Les requêtes permettent de construire un modèle optimisé pour la lecture :
+
+Les gestionnaires réagissent aux événements pour maintenir les données de lecture
+Les entités sont stockées avec JPA/Hibernate (ex. : Account, Operation)
+Exemple de contrôleur :
+java
+Copier le code
+@GetMapping("/account/{accountId}")
+public CompletableFuture<AccountLookupResponseDTO> getAccount(@PathVariable String accountId) {
+    return queryGateway.query(
+        new FindAccountQuery(accountId),
+        ResponseTypes.instanceOf(AccountLookupResponseDTO.class)
+    );
+}
+Les requêtes utilisent QueryGateway pour récupérer les données du modèle de lecture.
+
+## Tester et exécuter l’application
+
+1. **Lancer l’application**: `mvn spring-boot:run` (or run from your IDE).
+2. Accéder à Swagger **Swagger UI** (by default at `http://localhost:8083/swagger-ui.html`) .
+3. **Créer un compte** POST sur  `/commands/accounts/create` avec ce JSON:
    ```json
    {
      "iniatialBalance": 200,
      "currency": "MAD",
      "status": "CREATED"
-   }
-   ```
-   You’ll receive a generated account ID in the response.
-4. **Credit the account** by sending a `PUT` to `/commands/accounts/credit` with the JSON body:
+   }```
+4. **Créditer un compte** PUT sur  `/commands/accounts/credit`:
    ```json
    {
      "id": "<the-account-id>",
      "amount": 999,
      "currency": "MAD"
-   }
-   ```
-5. **Query** the read model by calling (for example) `GET /query/accounts/all` to list all accounts.
-
+   }```
+   
 ---
 
 ## Results
-
-Here are some screenshots demonstrating the process:
-
-- **Create Account**  
-  ![createAccount.png](img/createAccount.png)  
-  Shows the command to create a new account and the resulting ID.
-
-- **Credit Account**  
-  ![creaditAccount.png](img/creaditAccount.png)  
-  Shows an example `PUT` request to credit the account.
-
-- **Query API**  
-  ![api_query_test.png](img/api_query_test.png)  
-  Displays the read side’s data, such as account balances and operations.
+- **Création de compte**
+![1](https://github.com/user-attachments/assets/13de06e3-e949-4555-9667-847298464b91)
+Génération d’un ID après la commande.
+- **Créditer un compte**
+![3](https://github.com/user-attachments/assets/6cd97c1f-5899-4a05-81a5-eb4cd4bb1ed8)
+ Confirmation après un PUT réussi.
+- **Lecture des données**  
+![3](https://github.com/user-attachments/assets/1d7216b9-2f79-446a-87b7-cf9ecdf7ffd7)
+Visualisation des soldes et opérations via le modèle de requête.
