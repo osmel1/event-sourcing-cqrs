@@ -62,15 +62,15 @@ Elle regroupe les éléments partagés entre les modules :
 - **Exemple de contrôleur pour la création d’un compte**:
   
   ```java
- @PostMapping("/create")
-public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
-    return commandGateway.send(new CreateAccountCommand(
-            UUID.randomUUID().toString(),
-            request.getIniatialBalance(),
-            request.getCurrency()
-    ));
-}
-```
+    @PostMapping("/create")
+    public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
+           return commandGateway.send(new CreateAccountCommand(
+                UUID.randomUUID().toString(),
+                request.getIniatialBalance(),
+                request.getCurrency()
+        ));
+  }
+  ```
 
   - Les commandes sont envoyées via le **CommandGateway** .
   - Optionnellement, on peut accéder à l’`EventStore` pour examiner les événements stockés.
@@ -83,117 +83,18 @@ Les gestionnaires réagissent aux événements pour maintenir les données de le
 Les entités sont stockées avec JPA/Hibernate (ex. : Account, Operation)
 - **Controller** (example snippet):
   ```java
-  @GetMapping("/account/{accountId}")
-  public CompletableFuture<AccountLookupResponseDTO> getAccount(@PathVariable String accountId) {
-      return queryGateway.query(
-          new FindAccountQuery(accountId),
-          ResponseTypes.instanceOf(AccountLookupResponseDTO.class)
-      );
-  }```
+      @GetMapping("/account/{accountId}")
+      public CompletableFuture<AccountLookupResponseDTO> getAccount(@PathVariable String accountId) {
+          return queryGateway.query(
+              new FindAccountQuery(accountId),
+              ResponseTypes.instanceOf(AccountLookupResponseDTO.class)
+          );
+      }
+  ```
 
 Les commandes sont envoyées via CommandGateway. Optionnellement, utilisez l'EventStore pour examiner les événements stockés.
 
 ---
-
-##   
-Voici un fichier README.md prêt à l'emploi pour votre projet :
-
-markdown
-Copier le code
-# Spring Boot avec Axon Framework : CQRS & Event Sourcing
-
-Ce projet propose une implémentation simple des concepts **CQRS** et **Event Sourcing** dans une application Spring Boot en utilisant le framework Axon.
-
----
-
-## Introduction aux concepts
-
-### CQRS (Command Query Responsibility Segregation)
-Une approche qui sépare la gestion des commandes (écriture) des requêtes (lecture), permettant d’optimiser chaque côté indépendamment :
-- **Écriture** : Concentre les opérations modifiant l'état.
-- **Lecture** : Se focalise sur l’accès et la présentation des données.
-
-### Event Sourcing
-Plutôt que de sauvegarder directement l’état final d’une entité, on conserve une séquence d’événements décrivant son évolution. L’état actuel est reconstitué en rejouant ces événements, ce qui offre des avantages comme :
-- Auditabilité
-- Reconstitution des états passés
-
----
-
-## Configuration des dépendances
-
-1. **Ajouter Axon Framework**  
-   Excluez le connecteur Axon Server si vous ne l'utilisez pas :
-```xml
-<dependency>
-       <groupId>org.axonframework</groupId>
-       <artifactId>axon-spring-boot-starter</artifactId>
-       <version>4.10.3</version>
-       <exclusions>
-           <exclusion>
-               <groupId>org.axonframework</groupId>
-               <artifactId>axon-server-connector</artifactId>
-           </exclusion>
-       </exclusions>
-   </dependency>
-```
-   
-2. **Ajouter Swagger pour tester facilement les API** :
-
-```xml
-<dependency>
-    <groupId>org.springdoc</groupId>
-    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.7.0</version>
-</dependency>
-```
-
-3. **Structure et fonctionnement** :
-
-API Commune
-Module regroupant les éléments partagés entre les modules :
-
-Commandes (ex. : CreateAccountCommand, CreditAccountCommand)
-Événements (ex. : AccountCreatedEvent, AccountCreditedEvent)
-DTOs utilisés par les côtés commande et requête
-Gestion des Commandes (Écriture)
-La logique métier est implémentée dans les agrégats :
-
-Annotés avec @Aggregate
-Contiennent :
-Command Handlers : Gestion des commandes
-Event Sourcing Handlers : Mise à jour de l'état interne lors de l’application des événements
-Exemple de contrôleur :
-
-```java
-@PostMapping("/create")
-public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request) {
-    return commandGateway.send(new CreateAccountCommand(
-        UUID.randomUUID().toString(),
-        request.getIniatialBalance(),
-        request.getCurrency()
-    ));
-}
-```
-
-## Les commandes sont envoyées via CommandGateway. Optionnellement, utilisez l'EventStore pour examiner les événements stockés.
-
-Gestion des Requêtes (Lecture)
-Les requêtes permettent de construire un modèle optimisé pour la lecture :
-
-Les gestionnaires réagissent aux événements pour maintenir les données de lecture
-Les entités sont stockées avec JPA/Hibernate (ex. : Account, Operation)
-Exemple de contrôleur :
-java
-Copier le code
-@GetMapping("/account/{accountId}")
-public CompletableFuture<AccountLookupResponseDTO> getAccount(@PathVariable String accountId) {
-    return queryGateway.query(
-        new FindAccountQuery(accountId),
-        ResponseTypes.instanceOf(AccountLookupResponseDTO.class)
-    );
-}
-Les requêtes utilisent QueryGateway pour récupérer les données du modèle de lecture.
 
 ## Tester et exécuter l’application
 
@@ -205,14 +106,16 @@ Les requêtes utilisent QueryGateway pour récupérer les données du modèle de
      "iniatialBalance": 200,
      "currency": "MAD",
      "status": "CREATED"
-   }```
+   }
+   ```
 4. **Créditer un compte** PUT sur  `/commands/accounts/credit`:
    ```json
    {
      "id": "<the-account-id>",
      "amount": 999,
      "currency": "MAD"
-   }```
+   }
+   ```
    
 ---
 
